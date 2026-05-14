@@ -1,0 +1,101 @@
+{
+  "entities": {
+    "TaskSys1": {
+      "title": "Region Assignment Task",
+      "description": "Task for equipment teams, fiber teams, and config teams.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "dateTime": { "type": "string" },
+        "installDate": { "type": "string" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "helperEndTime": { "type": "string" },
+        "equipTeams": { "type": "array", "items": { "type": "string" } },
+        "equipTeamsSub": { "type": "array", "items": { "type": "string" } },
+        "fiberTeams": { "type": "array", "items": { "type": "string" } },
+        "configTeam": { "type": "string" },
+        "pmTeam": { "type": "string" },
+        "cid": { "type": "string" },
+        "customerName": { "type": "string" },
+        "scopeOfWork": { "type": "string" },
+        "otherScopeDetail": { "type": "string" },
+        "customerContact": { "type": "string" },
+        "location": { "type": "string" },
+        "status": { "type": "string" },
+        "remark": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "cid", "installDate", "startTime", "endTime"]
+    },
+    "TaskSys2": {
+      "title": "Pre Survey Task",
+      "description": "Task for site surveys.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "surveyId": { "type": "string" },
+        "location": { "type": "string" },
+        "surveyor": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "surveyId"]
+    },
+    "TaskSys3": {
+      "title": "Cross Connect Order",
+      "description": "Order for cross-connect between ports.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "cid": { "type": "string" },
+        "fromPort": { "type": "string" },
+        "toPort": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "cid"]
+    },
+    "MasterData": {
+      "title": "System Master Data",
+      "description": "Global configuration for teams, scopes, and statuses.",
+      "type": "object",
+      "properties": {
+        "equipTeams": { "type": "array", "items": { "type": "string" } },
+        "fiberTeams": { "type": "array", "items": { "type": "string" } },
+        "configTeams": { "type": "array", "items": { "type": "string" } },
+        "pmTeams": { "type": "array", "items": { "type": "string" } },
+        "scopeOfWorks": { "type": "array", "items": { "type": "string" } },
+        "statuses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "bg": { "type": "string" },
+              "text": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/tasksSys1/{taskId}": {
+      "schema": "TaskSys1",
+      "description": "Collection of Region Assignment tasks."
+    },
+    "/tasksSys2/{taskId}": {
+      "schema": "TaskSys2",
+      "description": "Collection of Pre Survey tasks."
+    },
+    "/tasksSys3/{taskId}": {
+      "schema": "TaskSys3",
+      "description": "Collection of Cross Connect orders."
+    },
+    "/settings/masterData": {
+      "schema": "MasterData",
+      "description": "Global master data settings."
+    }
+  }
+}
