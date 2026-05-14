@@ -309,7 +309,7 @@ export default function App() {
         </header>
 
         <div className="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar flex flex-col min-h-0 relative">
-          {activeTab === 'main_dashboard' && <MainDashboardView tasksSys1={tasksSys1} tasksSys2={tasksSys2} tasksSys3={tasksSys3} />}
+          {activeTab === 'main_dashboard' && <MainDashboardView tasksSys1={tasksSys1} tasksSys2={tasksSys2} tasksSys3={tasksSys3} masterData={masterData} />}
           {activeTab === 'dashboard_sys1' && <DashboardView systemMode="sys1" tasksSys1={tasksSys1} masterData={masterData} />}
           {activeTab === 'dashboard_sys2' && <DashboardView systemMode="sys2" tasksSys1={tasksSys2} masterData={masterData} />}
           {activeTab === 'dashboard_sys3' && <DashboardView systemMode="sys3" tasksSys1={tasksSys3} masterData={masterData} />}
