@@ -85,12 +85,14 @@ export default function App() {
   // Mobile Nav Position
   const [navPos, setNavPos] = useState({ x: 20, y: 80 });
   const [isDragging, setIsDragging] = useState(false);
+  const [dragStartTime, setDragStartTime] = useState(0);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const [hasMovedSignificant, setHasMovedSignificant] = useState(false);
 
   const handleDragStart = (e: any) => {
     setIsDragging(true);
     setHasMovedSignificant(false);
+    setDragStartTime(Date.now());
     setDragStartPos({ x: e.clientX, y: e.clientY });
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -98,9 +100,8 @@ export default function App() {
   const handleDragMove = (e: any) => {
     if (!isDragging) return;
     
-    // Calculate distance moved
     const dist = Math.sqrt(Math.pow(e.clientX - dragStartPos.x, 2) + Math.pow(e.clientY - dragStartPos.y, 2));
-    if (dist > 5) setHasMovedSignificant(true);
+    if (dist > 8) setHasMovedSignificant(true);
 
     const x = Math.max(10, Math.min(window.innerWidth - 60, e.clientX - 25));
     const y = Math.max(10, Math.min(window.innerHeight - 60, e.clientY - 25));
@@ -109,6 +110,14 @@ export default function App() {
 
   const handleDragEnd = () => {
     setIsDragging(false);
+  };
+
+  const handleMenuClick = (e: React.MouseEvent) => {
+    const dragDuration = Date.now() - dragStartTime;
+    // If it was a quick tap OR didn't move much, it's a click
+    if (!hasMovedSignificant || dragDuration < 150) {
+      setIsSidebarOpen(!isSidebarOpen);
+    }
   };
 
   const actualCollapsed = isSidebarCollapsed && !hoverExpand;
@@ -151,7 +160,16 @@ export default function App() {
       (docSnap) => {
         if (docSnap.exists()) {
           let data = docSnap.data() as MasterData;
-          if (!data.scopeOfWorks) data.scopeOfWorks = defaultMasterData.scopeOfWorks;
+          if (!data.scopeOfWorks) {
+            data.scopeOfWorks = defaultMasterData.scopeOfWorks;
+          } else {
+            // Migration: Ensure it is an array of objects, not strings
+            data.scopeOfWorks = (data.scopeOfWorks as any[]).map(item => 
+              typeof item === 'string' 
+                ? { name: item, duration: 60, isManual: item.includes('กำหนดเวลาเอง') || item.includes('Custom') || item.includes('อื่นๆ') } 
+                : item
+            );
+          }
           setMasterData(data);
         } else {
           setDoc(masterDataDocRef, defaultMasterData).catch(err => handleFirestoreError(err, OperationType.WRITE, masterDataDocRef.path));
@@ -316,40 +334,37 @@ export default function App() {
             : "w-0 -translate-x-full lg:w-0 lg:translate-x-0 overflow-hidden"
         )}
       >
-        <div className={cn("p-6 h-auto min-h-[80px] flex items-center justify-between border-b border-slate-100 shrink-0", actualCollapsed && "lg:justify-center lg:px-2")}>
-          <h1 className="text-lg font-bold flex items-center gap-3 overflow-hidden">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-sm"><Layers className="w-6 h-6" /></div>
-            {(!actualCollapsed || window.innerWidth <= 1024) && (
-              <div className="flex flex-col min-w-0 transition-opacity duration-300">
-                <span className="truncate tracking-wide text-blue-700">MASS</span>
-                <span className="text-[9px] text-slate-500 font-normal truncate" title="Management And Service System">MASS System</span>
-              </div>
-            )}
-          </h1>
-          
-          <button 
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
-            className={cn(
-              "p-1.5 bg-slate-50 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 hidden lg:flex transition-colors border border-slate-200",
-              actualCollapsed && "hidden"
-            )}
-            title="หุบแถบเมนู"
-          >
-            <PanelLeftClose className="w-4 h-4" />
-          </button>
-        </div>
-        
-        {actualCollapsed && (
-          <div className="hidden lg:flex justify-center py-4 border-b border-slate-50">
-             <button 
-                onClick={() => setIsSidebarCollapsed(false)} 
-                className="p-2 bg-blue-50 rounded-xl text-blue-600 border border-blue-100 shadow-sm hover:bg-blue-100 transition-colors"
-                title="ขยายแถบเมนู"
+        <div className={cn("p-6 h-auto min-h-[80px] flex items-center justify-between border-b border-slate-100 shrink-0", actualCollapsed && "justify-center px-2")}>
+          {actualCollapsed ? (
+            <button 
+              onClick={() => setIsSidebarCollapsed(false)} 
+              className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all hover:scale-110 active:scale-95"
+              title="ขยายแถบเมนู"
+            >
+              <PanelLeftOpen className="w-5 h-5" />
+            </button>
+          ) : (
+            <>
+              <h1 className="text-lg font-bold flex items-center gap-3 overflow-hidden">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-sm"><Layers className="w-6 h-6" /></div>
+                {(!actualCollapsed || window.innerWidth <= 1024) && (
+                  <div className="flex flex-col min-w-0 transition-opacity duration-300">
+                    <span className="truncate tracking-wide text-blue-700">MASS</span>
+                    <span className="text-[9px] text-slate-500 font-normal truncate" title="Management And Service System">MASS System</span>
+                  </div>
+                )}
+              </h1>
+              
+              <button 
+                onClick={() => setIsSidebarCollapsed(true)} 
+                className="p-1.5 bg-slate-50 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 hidden lg:flex transition-colors border border-slate-200"
+                title="หุบแถบเมนู"
               >
-                <PanelLeftOpen className="w-5 h-5" />
+                <PanelLeftClose className="w-4 h-4" />
               </button>
-          </div>
-        )}
+            </>
+          )}
+        </div>
         <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto custom-scrollbar">
           <SidebarItem id="main_dashboard" icon={Home} label="Main Dashboard" />
           <div className="my-3 border-t border-slate-100"></div>
@@ -418,10 +433,10 @@ export default function App() {
             onPointerUp={handleDragEnd}
           >
             <button 
-              onClick={() => { if (!hasMovedSignificant) setIsSidebarOpen(!isSidebarOpen); }}
+              onClick={handleMenuClick}
               className={cn(
                 "p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200",
-                isDragging ? "scale-110 rotate-12 shadow-2xl ring-4 ring-blue-100" : "scale-100 shadow-xl"
+                isDragging ? "scale-110 rotate-12 shadow-2xl ring-4 ring-blue-100 opacity-90" : "scale-100 shadow-xl"
               )}
             >
               <Menu className="w-6 h-6" />
