@@ -77,7 +77,7 @@ const sys3Columns = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('main_dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [hoverExpand, setHoverExpand] = useState(false);
   const [openModalForm, setOpenModalForm] = useState<string | null>(null);
@@ -85,17 +85,23 @@ export default function App() {
   // Mobile Nav Position
   const [navPos, setNavPos] = useState({ x: 20, y: 80 });
   const [isDragging, setIsDragging] = useState(false);
-  const [hasMoved, setHasMoved] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+  const [hasMovedSignificant, setHasMovedSignificant] = useState(false);
 
   const handleDragStart = (e: any) => {
     setIsDragging(true);
-    setHasMoved(false);
+    setHasMovedSignificant(false);
+    setDragStartPos({ x: e.clientX, y: e.clientY });
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
   const handleDragMove = (e: any) => {
     if (!isDragging) return;
-    setHasMoved(true);
+    
+    // Calculate distance moved
+    const dist = Math.sqrt(Math.pow(e.clientX - dragStartPos.x, 2) + Math.pow(e.clientY - dragStartPos.y, 2));
+    if (dist > 5) setHasMovedSignificant(true);
+
     const x = Math.max(10, Math.min(window.innerWidth - 60, e.clientX - 25));
     const y = Math.max(10, Math.min(window.innerHeight - 60, e.clientY - 25));
     setNavPos({ x, y });
@@ -103,7 +109,6 @@ export default function App() {
 
   const handleDragEnd = () => {
     setIsDragging(false);
-    // setHasMoved will be reset on next drag start
   };
 
   const actualCollapsed = isSidebarCollapsed && !hoverExpand;
@@ -298,20 +303,21 @@ export default function App() {
         ></div>
       ) : null}
 
-          <aside
+      {/* Sidebar */}
+      <aside
         onMouseEnter={() => {
           if (isSidebarCollapsed && window.innerWidth > 1024) setHoverExpand(true);
         }}
         onMouseLeave={() => setHoverExpand(false)}
         className={cn(
-          "bg-white text-slate-800 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.05)] z-50 shrink-0 transition-all duration-300 absolute lg:relative h-full border-r border-slate-200",
+          "bg-white text-slate-800 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.05)] z-50 shrink-0 transition-all duration-300 fixed lg:relative h-full border-r border-slate-200",
           isSidebarOpen 
             ? (actualCollapsed ? "w-20 translate-x-0" : "w-72 translate-x-0") 
             : "w-0 -translate-x-full lg:w-0 lg:translate-x-0 overflow-hidden"
         )}
       >
-        <div className={cn("p-6 h-auto min-h-[80px] flex items-center border-b border-slate-100 shrink-0", actualCollapsed && "lg:justify-center lg:px-2")}>
-          <h1 className="text-lg font-bold flex items-center gap-3 w-full overflow-hidden">
+        <div className={cn("p-6 h-auto min-h-[80px] flex items-center justify-between border-b border-slate-100 shrink-0", actualCollapsed && "lg:justify-center lg:px-2")}>
+          <h1 className="text-lg font-bold flex items-center gap-3 overflow-hidden">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-sm"><Layers className="w-6 h-6" /></div>
             {(!actualCollapsed || window.innerWidth <= 1024) && (
               <div className="flex flex-col min-w-0 transition-opacity duration-300">
@@ -320,7 +326,30 @@ export default function App() {
               </div>
             )}
           </h1>
+          
+          <button 
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+            className={cn(
+              "p-1.5 bg-slate-50 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 hidden lg:flex transition-colors border border-slate-200",
+              actualCollapsed && "hidden"
+            )}
+            title="หุบแถบเมนู"
+          >
+            <PanelLeftClose className="w-4 h-4" />
+          </button>
         </div>
+        
+        {actualCollapsed && (
+          <div className="hidden lg:flex justify-center py-4 border-b border-slate-50">
+             <button 
+                onClick={() => setIsSidebarCollapsed(false)} 
+                className="p-2 bg-blue-50 rounded-xl text-blue-600 border border-blue-100 shadow-sm hover:bg-blue-100 transition-colors"
+                title="ขยายแถบเมนู"
+              >
+                <PanelLeftOpen className="w-5 h-5" />
+              </button>
+          </div>
+        )}
         <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto custom-scrollbar">
           <SidebarItem id="main_dashboard" icon={Home} label="Main Dashboard" />
           <div className="my-3 border-t border-slate-100"></div>
@@ -380,7 +409,8 @@ export default function App() {
               left: navPos.x, 
               top: navPos.y, 
               zIndex: 100,
-              cursor: isDragging ? 'grabbing' : 'grab'
+              cursor: isDragging ? 'grabbing' : 'grab',
+              touchAction: 'none'
             }}
             className="lg:hidden"
             onPointerDown={handleDragStart}
@@ -388,24 +418,19 @@ export default function App() {
             onPointerUp={handleDragEnd}
           >
             <button 
-              onClick={() => { if (!hasMoved) setIsSidebarOpen(!isSidebarOpen); }}
+              onClick={() => { if (!hasMovedSignificant) setIsSidebarOpen(!isSidebarOpen); }}
               className={cn(
-                "p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors",
-                isDragging ? "scale-110 opacity-80" : "scale-100 opacity-100"
+                "p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200",
+                isDragging ? "scale-110 rotate-12 shadow-2xl ring-4 ring-blue-100" : "scale-100 shadow-xl"
               )}
             >
               <Menu className="w-6 h-6" />
             </button>
           </div>
 
-          <button 
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
-            className="p-2 bg-slate-50 rounded-lg hover:bg-blue-50 text-slate-500 hover:text-blue-600 hidden lg:flex transition-colors border border-slate-200"
-            title={isSidebarCollapsed ? "ขยายแถบเมนู" : "หุบแถบเมนู"}
-          >
-            {isSidebarCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
-          </button>
-          <h2 className="text-xl md:text-2xl font-bold text-slate-800 flex-1">
+          <div className="lg:hidden w-12 h-12"></div>
+          
+          <h2 className="text-xl md:text-2xl font-bold text-slate-800 flex-1 truncate">
             {activeTab === 'main_dashboard' && 'Main Dashboard'}
             {activeTab === 'dashboard_sys1' && 'Region Assignment Dashboard'}
             {activeTab === 'dashboard_sys2' && 'Pre Survey Dashboard'}
