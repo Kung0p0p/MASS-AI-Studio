@@ -279,7 +279,7 @@ export const AssignSys1Form: React.FC<AssignSys1FormProps> = ({ tasksSys1, maste
   if (isModal) return content;
 
   return (
-    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 max-w-4xl mx-auto w-full">
+    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 w-full">
       <h2 className="text-lg font-bold text-slate-800 mb-4 border-b pb-3 flex items-center">
         <ClipboardList className="w-5 h-5 text-blue-600 mr-2" /> ฟอร์ม Assign งาน Region
       </h2>

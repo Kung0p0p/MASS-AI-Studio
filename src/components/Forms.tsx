@@ -69,7 +69,7 @@ export const AssignSys2Form: React.FC<AssignSys2FormProps> = ({ masterData, onCl
   if (isModal) return content;
 
   return (
-    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 max-w-2xl mx-auto w-full">
+    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 w-full">
       <h2 className="text-lg font-bold text-slate-800 mb-4 border-b pb-3 flex items-center">
         <MapPin className="w-5 h-5 text-amber-600 mr-2" /> บันทึกงานสำรวจ
       </h2>
@@ -145,7 +145,7 @@ export const AssignSys3Form: React.FC<AssignSys3FormProps> = ({ masterData, onCl
   if (isModal) return content;
 
   return (
-    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 max-w-2xl mx-auto w-full">
+    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 w-full">
       <h2 className="text-lg font-bold text-slate-800 mb-4 border-b pb-3 flex items-center">
         <Network className="w-5 h-5 text-emerald-600 mr-2" /> เปิดออเดอร์ Cross Connect
       </h2>

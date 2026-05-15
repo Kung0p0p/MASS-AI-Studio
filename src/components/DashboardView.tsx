@@ -23,7 +23,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ systemMode, tasksS
   if (systemMode !== 'sys1') {
     const isSys2 = systemMode === 'sys2';
     return (
-      <div className={`p-10 rounded-2xl font-bold border text-center shadow-sm max-w-3xl mx-auto mt-10 ${isSys2 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+      <div className={`p-10 rounded-2xl font-bold border text-center shadow-sm w-full mt-10 ${isSys2 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
         {isSys2 ? <PieChart className="w-16 h-16 mx-auto mb-4 opacity-80" /> : <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-80" />}
         <h3 className="text-2xl">{isSys2 ? 'Pre Survey Dashboard' : 'Cross Connect Order Dashboard'}</h3>
         <p className="font-normal mt-2 opacity-80">ส่วนนี้ยังไม่มีกราฟแสดงผล เนื่องจากโครงสร้างข้อมูลยังไม่สมบูรณ์</p>
@@ -164,7 +164,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ systemMode, tasksS
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 w-full">
       <header className="flex flex-col md:flex-row justify-between md:items-start gap-4">
         <div>
           <h2 className="text-xl md:text-3xl font-bold text-slate-900">Region Assignment Dashboard</h2>

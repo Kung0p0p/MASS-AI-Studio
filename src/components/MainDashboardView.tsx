@@ -59,12 +59,12 @@ export const MainDashboardView: React.FC<MainDashboardViewProps> = ({ tasksSys1,
   });
 
   const SystemCard = ({ title, icon: Icon, colorClass, bgClass, stats }: any) => (
-    <div className={`p-6 rounded-2xl border shadow-sm ${bgClass} flex flex-col`}>
+    <div className={`p-6 rounded-2xl border shadow-sm ${bgClass} flex flex-col h-full`}>
       <div className="flex items-center gap-3 mb-4">
         <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white ${colorClass} shadow-sm`}>
           <Icon className="w-6 h-6" />
         </div>
-        <h3 className="text-base md:text-lg font-bold text-slate-800">{title}</h3>
+        <h3 className="text-base md:text-lg font-bold text-slate-800 line-clamp-1">{title}</h3>
       </div>
       <div className="grid grid-cols-2 gap-3 mb-4 flex-1">
         <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col items-center justify-center">
@@ -76,11 +76,11 @@ export const MainDashboardView: React.FC<MainDashboardViewProps> = ({ tasksSys1,
           <span className="text-2xl font-bold text-emerald-600">{stats.done}</span>
         </div>
         <div className="bg-orange-50/50 p-3 rounded-xl border border-orange-100 shadow-sm col-span-2 flex flex-col items-center justify-center">
-          <span className="text-[10px] md:text-xs font-semibold text-orange-600 mb-1">กำลังดำเนินการ / ยังไม่เสร็จ</span>
+          <span className="text-[10px] md:text-xs font-semibold text-orange-600 mb-1">รอดำเนินการ</span>
           <span className="text-2xl font-bold text-orange-600">{stats.pending}</span>
         </div>
       </div>
-      <div>
+      <div className="mt-auto">
         <div className="flex justify-between text-[10px] md:text-xs font-bold mb-1">
           <span className="text-slate-500">ความคืบหน้า</span>
           <span className={stats.percent === 100 ? 'text-emerald-600' : 'text-blue-600'}>{stats.percent}%</span>
@@ -101,7 +101,7 @@ export const MainDashboardView: React.FC<MainDashboardViewProps> = ({ tasksSys1,
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto w-full">
+    <div className="space-y-6 w-full">
       <header className="flex flex-col md:flex-row justify-between md:items-end gap-4 border-b border-slate-200 pb-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center">

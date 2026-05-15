@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Home, UserCog, MapPin, Network, CalendarDays, 
   Database, Menu, Layers, ExternalLink, Cloud, 
-  CircleAlert, CircleHelp, ClipboardList, Package
+  PanelLeftClose, PanelLeftOpen, Package, ClipboardList,
+  CircleAlert, CircleHelp
 } from 'lucide-react';
 import { onSnapshot, collection, doc, setDoc } from 'firebase/firestore';
 import { db, initAuth, auth, handleFirestoreError, OperationType } from './services/firebase';
@@ -72,6 +73,7 @@ const sys3Columns = [
 export default function App() {
   const [activeTab, setActiveTab] = useState('main_dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [openModalForm, setOpenModalForm] = useState<string | null>(null);
 
   const [masterData, setMasterData] = useState<MasterData>(defaultMasterData);
@@ -201,20 +203,24 @@ export default function App() {
       }
     };
 
+    const showLabel = !isSidebarCollapsed || window.innerWidth <= 1024;
+
     return (
       <div className="space-y-1">
         <button
           onClick={handleParentClick}
+          title={isSidebarCollapsed ? label : ""}
           className={cn(
-            "w-full flex items-center px-4 py-3 rounded-xl transition-colors",
-            isActive ? "bg-blue-50 text-blue-700 font-bold shadow-sm border border-blue-100" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium"
+            "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200",
+            isActive ? "bg-blue-50 text-blue-700 font-bold shadow-sm border border-blue-100" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium",
+            isSidebarCollapsed && "lg:justify-center lg:px-0"
           )}
         >
-          <Icon className={cn("w-5 h-5 mr-3", isActive ? "text-blue-600" : "opacity-70")} />
-          <span className="whitespace-nowrap flex-1 text-left">{label}</span>
-          {subItems.length > 0 && <Layers className={cn("w-3 h-3 transition-transform", isExpanded ? "rotate-180" : "")} />}
+          <Icon className={cn("w-5 h-5", isActive ? "text-blue-600" : "opacity-70", !isSidebarCollapsed ? "mr-3" : "lg:mr-0")} />
+          {showLabel && <span className="whitespace-nowrap flex-1 text-left">{label}</span>}
+          {showLabel && subItems.length > 0 && <Layers className={cn("w-3 h-3 transition-transform", isExpanded ? "rotate-180" : "")} />}
         </button>
-        {isExpanded && subItems.length > 0 && (
+        {isExpanded && subItems.length > 0 && showLabel && (
           <div className="pl-14 pr-4 space-y-1 pb-2 pt-1">
             {subItems.map((sub: any) => (
               <button
@@ -237,20 +243,29 @@ export default function App() {
 
   return (
     <div className="fixed inset-0 flex w-full bg-slate-50 text-slate-900 overflow-hidden font-sans">
+      {/* Sidebar Overlay for Mobile */}
+      {isSidebarOpen && window.innerWidth <= 1024 && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[45] backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)}></div>
+      )}
+
       {/* Sidebar */}
       <aside
         className={cn(
           "bg-white text-slate-800 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.05)] z-50 shrink-0 transition-all duration-300 absolute lg:relative h-full border-r border-slate-200",
-          isSidebarOpen ? "w-72 translate-x-0" : "w-0 -translate-x-full lg:translate-x-0 overflow-hidden"
+          isSidebarOpen 
+            ? (isSidebarCollapsed ? "w-20 translate-x-0" : "w-72 translate-x-0") 
+            : "w-0 -translate-x-full lg:translate-x-0 overflow-hidden"
         )}
       >
-        <div className="p-6 h-auto min-h-[80px] flex items-center border-b border-slate-100 shrink-0">
+        <div className={cn("p-6 h-auto min-h-[80px] flex items-center border-b border-slate-100 shrink-0", isSidebarCollapsed && "lg:justify-center lg:px-2")}>
           <h1 className="text-lg font-bold flex items-center gap-3 w-full overflow-hidden">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Layers className="w-6 h-6" /></div>
-            <div className="flex flex-col min-w-0">
-              <span className="truncate tracking-wide text-blue-700">MASS</span>
-              <span className="text-[9px] text-slate-500 font-normal truncate" title="Management And Service System">Management And Service System</span>
-            </div>
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-sm"><Layers className="w-6 h-6" /></div>
+            {(!isSidebarCollapsed || window.innerWidth <= 1024) && (
+              <div className="flex flex-col min-w-0 transition-opacity duration-300">
+                <span className="truncate tracking-wide text-blue-700">MASS</span>
+                <span className="text-[9px] text-slate-500 font-normal truncate" title="Management And Service System">MASS System</span>
+              </div>
+            )}
           </h1>
         </div>
         <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto custom-scrollbar">
@@ -263,38 +278,58 @@ export default function App() {
           <SidebarItem id="combined_calendar" icon={CalendarDays} label="Calendar All System" />
 
           <div className="mt-6 pt-4 border-t border-slate-100">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">External Systems</p>
+            {(!isSidebarCollapsed || window.innerWidth <= 1024) && (
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">External Systems</p>
+            )}
             <a
               href="#"
+              title={isSidebarCollapsed ? "Remove Equipment" : ""}
               onClick={(e) => { e.preventDefault(); window.open('https://example.com', '_blank'); }}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold border border-indigo-100 transition-colors shadow-sm group"
+              className={cn(
+                "w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold border border-indigo-100 transition-colors shadow-sm group",
+                isSidebarCollapsed && "lg:justify-center lg:px-0"
+              )}
             >
-              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-indigo-600 shadow-sm group-hover:scale-110 transition-transform">
+              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-indigo-600 shadow-sm group-hover:scale-110 transition-transform shrink-0">
                 <Package className="w-4 h-4" />
               </div>
-              <span className="flex-1 text-sm">Remove Equipment</span>
-              <ExternalLink className="w-3 h-3 opacity-50" />
+              {(!isSidebarCollapsed || window.innerWidth <= 1024) && (
+                <>
+                  <span className="flex-1 text-sm truncate">Remove Equip</span>
+                  <ExternalLink className="w-3 h-3 opacity-50 shrink-0" />
+                </>
+              )}
             </a>
           </div>
         </nav>
         <div className="p-4 border-t border-slate-200 bg-white shrink-0">
           <button
             onClick={() => { setActiveTab('master_data'); if (window.innerWidth <= 1024) setIsSidebarOpen(false); }}
+            title={isSidebarCollapsed ? "Master Data" : ""}
             className={cn(
               "w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-colors",
-              activeTab === 'master_data' ? "bg-blue-50 text-blue-700 font-bold shadow-sm border border-blue-100" : "text-slate-600 hover:bg-slate-50 font-medium"
+              activeTab === 'master_data' ? "bg-blue-50 text-blue-700 font-bold shadow-sm border border-blue-100" : "text-slate-600 hover:bg-slate-50 font-medium",
+              isSidebarCollapsed && "lg:justify-center lg:px-0"
             )}
           >
-            <Database className="w-5 h-5 text-blue-600 mr-2" /> <span>Master Data</span>
+            <Database className={cn("w-5 h-5 text-blue-600", !isSidebarCollapsed ? "mr-2" : "lg:mr-0")} /> 
+            {(!isSidebarCollapsed || window.innerWidth <= 1024) && <span>Master Data</span>}
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 relative w-full h-full overflow-hidden bg-slate-50 flex flex-col">
-        <header className="p-4 md:p-6 bg-white border-b border-slate-200 shrink-0 flex items-center gap-3">
+        <header className="p-4 md:px-6 md:py-4 bg-white border-b border-slate-200 shrink-0 flex items-center gap-3 shadow-sm z-10">
           <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 lg:hidden">
             <Menu className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+            className="p-2 bg-slate-50 rounded-lg hover:bg-blue-50 text-slate-500 hover:text-blue-600 hidden lg:flex transition-colors border border-slate-200"
+            title={isSidebarCollapsed ? "ขยายแถบเมนู" : "หุบแถบเมนู"}
+          >
+            {isSidebarCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
           </button>
           <h2 className="text-xl md:text-2xl font-bold text-slate-800 flex-1">
             {activeTab === 'main_dashboard' && 'Main Dashboard'}
@@ -319,7 +354,7 @@ export default function App() {
           </div>
         </header>
 
-        <div className="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar flex flex-col min-h-0 relative">
+        <div className="flex-1 p-3 md:p-6 overflow-y-auto custom-scrollbar flex flex-col min-h-0 relative">
           {activeTab === 'main_dashboard' && <MainDashboardView tasksSys1={tasksSys1} tasksSys2={tasksSys2} tasksSys3={tasksSys3} masterData={masterData} />}
           {activeTab === 'dashboard_sys1' && <DashboardView systemMode="sys1" tasksSys1={tasksSys1} masterData={masterData} />}
           {activeTab === 'dashboard_sys2' && <DashboardView systemMode="sys2" tasksSys1={tasksSys2} masterData={masterData} />}

@@ -27,7 +27,7 @@ export const FormModal: React.FC<FormModalProps> = ({ isOpen, onClose, title, ic
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden"
           >
             <div className={`px-5 py-4 border-b border-slate-200 flex justify-between items-center ${theme.bg} shrink-0`}>
               <h2 className={`text-lg font-bold flex items-center ${theme.text}`}>
