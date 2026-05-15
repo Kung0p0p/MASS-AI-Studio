@@ -4,12 +4,18 @@ export interface Status {
   text: string;
 }
 
+export interface ScopeOfWork {
+  name: string;
+  duration: number; // in minutes
+  isManual: boolean; // if true, user must enter time manually
+}
+
 export interface MasterData {
   equipTeams: string[];
   fiberTeams: string[];
   configTeams: string[];
   pmTeams: string[];
-  scopeOfWorks: string[];
+  scopeOfWorks: ScopeOfWork[];
   statuses: Status[];
 }
 

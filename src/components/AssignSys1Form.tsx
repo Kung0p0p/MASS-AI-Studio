@@ -38,6 +38,8 @@ export const AssignSys1Form: React.FC<AssignSys1FormProps> = ({ tasksSys1, maste
   });
 
   const isCustomScope = (scopeName: string) => {
+    const scope = masterData.scopeOfWorks.find(s => s.name === scopeName);
+    if (scope) return scope.isManual;
     const s = scopeName || '';
     return s.includes('กำหนดเวลาเอง') || s.includes('Custom') || s.includes('อื่นๆ');
   };
@@ -46,7 +48,7 @@ export const AssignSys1Form: React.FC<AssignSys1FormProps> = ({ tasksSys1, maste
 
   const handleScopeChange = (scopeName: string) => {
     if (!isCustomScope(scopeName) && scopeName !== '') {
-      const duration = getScopeDuration(scopeName);
+      const duration = getScopeDuration(scopeName, masterData.scopeOfWorks);
       if (form.startTime) {
         const [h, m] = form.startTime.split(':').map(Number);
         const date = new Date();
@@ -68,7 +70,7 @@ export const AssignSys1Form: React.FC<AssignSys1FormProps> = ({ tasksSys1, maste
     const newHelperEndTime = `${String(hDate.getHours()).padStart(2, '0')}:${String(hDate.getMinutes()).padStart(2, '0')}`;
 
     if (!isCustomScope(form.scopeOfWork) && form.scopeOfWork !== '') {
-      const duration = getScopeDuration(form.scopeOfWork);
+      const duration = getScopeDuration(form.scopeOfWork, masterData.scopeOfWorks);
       const date = new Date();
       date.setHours(h, m + duration);
       const newEndTime = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
@@ -175,10 +177,10 @@ export const AssignSys1Form: React.FC<AssignSys1FormProps> = ({ tasksSys1, maste
             <label className="text-xs font-bold text-blue-700 uppercase">Scope of Work <span className="text-red-500">*</span></label>
             <select value={form.scopeOfWork} onChange={e => handleScopeChange(e.target.value)} className="w-full mt-1 px-3 py-2 border border-blue-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 text-slate-700">
               <option value="">- เลือก Scope -</option>
-              {masterData.scopeOfWorks.map(s => <option key={s} value={s}>{s}</option>)}
+              {masterData.scopeOfWorks.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
             </select>
           </div>
-          {form.scopeOfWork === 'อื่นๆ (Other)' && (
+          {isCustomScope(form.scopeOfWork) && (
             <div className="mt-1">
               <input type="text" value={form.otherScopeDetail} onChange={e => setForm({ ...form, otherScopeDetail: e.target.value })} placeholder="โปรดระบุรายละเอียดงาน..." className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" required />
             </div>

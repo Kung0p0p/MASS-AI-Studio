@@ -185,7 +185,7 @@ export const DataTable: React.FC<DataTableProps> = ({
           {columns.some(c => c.key === 'scopeOfWork') && (
             <select value={filters.scopeOfWork} onChange={e => setFilters({ ...filters, scopeOfWork: e.target.value })} className="border border-slate-300 rounded-lg px-2 py-1.5 text-xs outline-none bg-slate-50 text-slate-700">
               <option value="">-- Scope --</option>
-              {masterData.scopeOfWorks.map(s => <option key={s} value={s}>{s}</option>)}
+              {masterData.scopeOfWorks.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
             </select>
           )}
           {columns.some(c => c.key === 'equipTeams') && (
@@ -315,7 +315,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                       if (col.key === 'status') options = masterData.statuses.map(s => s.name);
                       else if (col.key === 'configTeam') options = masterData.configTeams;
                       else if (col.key === 'pmTeam') options = masterData.pmTeams;
-                      else if (col.key === 'scopeOfWork') options = masterData.scopeOfWorks;
+                      else if (col.key === 'scopeOfWork') options = masterData.scopeOfWorks.map(s => s.name);
 
                       return (
                         <td key={cIdx} className={`${tdClass} text-center relative group`} style={tdStyle} title={String(displayVal)}>

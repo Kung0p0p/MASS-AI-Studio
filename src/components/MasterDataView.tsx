@@ -33,9 +33,9 @@ export const MasterDataView: React.FC<MasterDataViewProps> = ({ masterData, appI
     };
 
     const remove = (idx: number) => {
-      if (window.confirm('ยืนยันลบข้อมูลนี้?')) {
+      window.customConfirm('ยืนยันลบข้อมูลนี้?', () => {
         updateDataInFirebase(dataKey, list.filter((_, i) => i !== idx));
-      }
+      });
     };
 
     return (
@@ -71,6 +71,75 @@ export const MasterDataView: React.FC<MasterDataViewProps> = ({ masterData, appI
     );
   };
 
+  const ScopeOfWorkEditor = () => {
+    const list = masterData.scopeOfWorks || [];
+    const add = () => updateDataInFirebase('scopeOfWorks', [...list, { name: 'Scope ใหม่', duration: 60, isManual: false }]);
+    const update = (idx: number, field: string, val: any) => {
+      const newList = [...list];
+      (newList[idx] as any)[field] = val;
+      updateDataInFirebase('scopeOfWorks', newList);
+    };
+    const remove = (idx: number) => {
+      window.customConfirm('ยืนยันลบ Scope นี้?', () => {
+        updateDataInFirebase('scopeOfWorks', list.filter((_, i) => i !== idx));
+      });
+    };
+
+    return (
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm md:col-span-1 lg:col-span-2 flex flex-col h-full">
+        <div className="flex justify-between items-center mb-3 border-b pb-2">
+          <h3 className="font-bold text-slate-800 flex items-center">
+            <ListChecks className="w-5 h-5 text-blue-600 mr-2" /> รายการ Scope of Work และระยะเวลา
+          </h3>
+          <button onClick={add} className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-bold border border-blue-200 transition-colors flex items-center gap-1">
+            <Plus className="w-3 h-3" /> เพิ่ม Scope
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 overflow-y-auto custom-scrollbar pr-1 max-h-[350px]">
+          {list.length === 0 && <div className="col-span-2 text-center text-xs text-slate-400 py-4">ไม่มีข้อมูล</div>}
+          {list.map((sw, idx) => (
+            <div key={idx} className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg relative group">
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  value={sw.name}
+                  onChange={e => update(idx, 'name', e.target.value)}
+                  className="flex-1 border border-slate-300 rounded px-2 py-1 text-sm outline-none focus:border-blue-500 font-bold"
+                />
+                <button onClick={() => remove(idx)} className="text-slate-300 hover:text-red-500 px-1 transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                 <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">เวลาทำงาน:</span>
+                    <div className="flex items-center border border-slate-300 rounded overflow-hidden">
+                       <input 
+                          type="number" 
+                          value={sw.duration} 
+                          onChange={e => update(idx, 'duration', parseInt(e.target.value) || 0)}
+                          className="w-16 px-2 py-1 text-xs outline-none bg-white text-center" 
+                       />
+                       <span className="bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500 border-l border-slate-300">Min</span>
+                    </div>
+                 </div>
+                 <label className="flex items-center gap-2 cursor-pointer bg-white px-2 py-1 border border-slate-200 rounded-md">
+                    <input 
+                       type="checkbox" 
+                       checked={sw.isManual} 
+                       onChange={e => update(idx, 'isManual', e.target.checked)}
+                       className="w-3 h-3 rounded text-blue-600"
+                    />
+                    <span className="text-[10px] font-bold text-slate-600">กำหนดเอง (Manual)</span>
+                 </label>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const StatusEditor = () => {
     const list = masterData.statuses || [];
     const add = () => updateDataInFirebase('statuses', [...list, { name: 'สถานะใหม่', bg: '#e2e8f0', text: '#475569' }]);
@@ -80,13 +149,13 @@ export const MasterDataView: React.FC<MasterDataViewProps> = ({ masterData, appI
       updateDataInFirebase('statuses', newList);
     };
     const remove = (idx: number) => {
-      if (window.confirm('ยืนยันลบสถานะนี้?')) {
+      window.customConfirm('ยืนยันลบสถานะนี้?', () => {
         updateDataInFirebase('statuses', list.filter((_, i) => i !== idx));
-      }
+      });
     };
 
     return (
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm md:col-span-2 flex flex-col h-full">
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm md:col-span-1 lg:col-span-2 flex flex-col h-full">
         <div className="flex justify-between items-center mb-3 border-b pb-2">
           <h3 className="font-bold text-slate-800 flex items-center">
             <Tags className="w-5 h-5 text-blue-600 mr-2" /> ตั้งค่าสถานะงานและสี
@@ -96,7 +165,7 @@ export const MasterDataView: React.FC<MasterDataViewProps> = ({ masterData, appI
           </button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 overflow-y-auto custom-scrollbar pr-1 max-h-[300px]">
-          {list.length === 0 && <div className="col-span-1 sm:col-span-2 text-center text-xs text-slate-400 py-4">ไม่มีสถานะ</div>}
+          {list.length === 0 && <div className="col-span-1 sm:grid-cols-2 text-center text-xs text-slate-400 py-4">ไม่มีสถานะ</div>}
           {list.map((st, idx) => (
             <div key={idx} className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg relative group hover:border-blue-200 transition-colors">
               <div className="flex gap-2 items-center">
@@ -152,7 +221,7 @@ export const MasterDataView: React.FC<MasterDataViewProps> = ({ masterData, appI
         <SimpleListEditor title="Fiber Responsible" dataKey="fiberTeams" placeholder="เพิ่มทีม Fiber..." icon={Network} />
         <SimpleListEditor title="Config Responsible" dataKey="configTeams" placeholder="เพิ่มทีม Config..." icon={Laptop} />
         <SimpleListEditor title="PM" dataKey="pmTeams" placeholder="เพิ่ม PM..." icon={UserCheck} />
-        <SimpleListEditor title="Scope of Work" dataKey="scopeOfWorks" placeholder="เพิ่ม Scope..." icon={ListChecks} />
+        <ScopeOfWorkEditor />
         <StatusEditor />
       </div>
     </div>

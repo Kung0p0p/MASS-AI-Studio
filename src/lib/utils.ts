@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { ScopeOfWork } from '../types';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -34,7 +35,11 @@ export function parseThaiDateTime(dtStr: string) {
   return isNaN(fallback.getTime()) ? null : fallback;
 }
 
-export function getScopeDuration(scopeName: string) {
+export function getScopeDuration(scopeName: string, scopeOfWorks: ScopeOfWork[]) {
+  const scope = (scopeOfWorks || []).find(s => s.name === scopeName);
+  if (scope) return scope.duration;
+  
+  // Fallback for custom/other if not found or if hardcoded strings are used
   const s = (scopeName || '').toLowerCase();
   if (s.includes('install')) return 120;
   if (s.includes('remove')) return 60;

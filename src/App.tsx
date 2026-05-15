@@ -28,7 +28,12 @@ const defaultMasterData: MasterData = {
   configTeams: ["Config 1", "Config 2"],
   pmTeams: ["PM John", "PM Jane", "PM Peter"],
   scopeOfWorks: [
-    "Install New", "Remove", "Migration", "Preventive Maintenance", "กำหนดเวลาเอง (Custom)", "อื่นๆ (Other)"
+    { name: "Install New", duration: 120, isManual: false },
+    { name: "Remove", duration: 60, isManual: false },
+    { name: "Migration", duration: 180, isManual: false },
+    { name: "Preventive Maintenance", duration: 90, isManual: false },
+    { name: "กำหนดเวลาเอง (Custom)", duration: 60, isManual: true },
+    { name: "อื่นๆ (Other)", duration: 60, isManual: true }
   ],
   statuses: [
     { name: "รอรับงาน", bg: "#f59e0b", text: "#b45309" },
@@ -74,7 +79,34 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('main_dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [hoverExpand, setHoverExpand] = useState(false);
   const [openModalForm, setOpenModalForm] = useState<string | null>(null);
+  
+  // Mobile Nav Position
+  const [navPos, setNavPos] = useState({ x: 20, y: 80 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [hasMoved, setHasMoved] = useState(false);
+
+  const handleDragStart = (e: any) => {
+    setIsDragging(true);
+    setHasMoved(false);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleDragMove = (e: any) => {
+    if (!isDragging) return;
+    setHasMoved(true);
+    const x = Math.max(10, Math.min(window.innerWidth - 60, e.clientX - 25));
+    const y = Math.max(10, Math.min(window.innerHeight - 60, e.clientY - 25));
+    setNavPos({ x, y });
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    // setHasMoved will be reset on next drag start
+  };
+
+  const actualCollapsed = isSidebarCollapsed && !hoverExpand;
 
   const [masterData, setMasterData] = useState<MasterData>(defaultMasterData);
   const [tasksSys1, setTasksSys1] = useState<TaskSys1[]>([]);
@@ -157,9 +189,11 @@ export default function App() {
       const currentTask = tasksSys1.find(t => t.id === taskId);
       if (currentTask) {
         const tempTask = { ...currentTask, [key]: val };
-        const isCustom = (tempTask.scopeOfWork || '').includes('กำหนดเวลาเอง') || (tempTask.scopeOfWork || '').includes('Custom') || (tempTask.scopeOfWork || '') === 'อื่นๆ (Other)';
+        const scope = masterData.scopeOfWorks.find(s => s.name === tempTask.scopeOfWork);
+        const isCustom = scope ? scope.isManual : (tempTask.scopeOfWork || '').includes('กำหนดเวลาเอง') || (tempTask.scopeOfWork || '').includes('Custom') || (tempTask.scopeOfWork || '') === 'อื่นๆ (Other)';
+        
         if (!isCustom && tempTask.startTime) {
-          const duration = getScopeDuration(tempTask.scopeOfWork);
+          const duration = getScopeDuration(tempTask.scopeOfWork, masterData.scopeOfWorks);
           const [h, m] = tempTask.startTime.split(':').map(Number);
           const date = new Date();
           date.setHours(h, m + duration);
@@ -192,6 +226,12 @@ export default function App() {
     }, [activeTab, subItems]);
 
     const handleParentClick = () => {
+      if (actualCollapsed) {
+        setHoverExpand(true);
+        if (subItems.length > 0) setIsExpanded(true);
+        return;
+      }
+
       if (subItems.length > 0) {
         setIsExpanded(!isExpanded);
         if (!isExpanded && !subItems.some((s: any) => s.id === activeTab)) {
@@ -203,20 +243,20 @@ export default function App() {
       }
     };
 
-    const showLabel = !isSidebarCollapsed || window.innerWidth <= 1024;
+    const showLabel = !actualCollapsed || window.innerWidth <= 1024;
 
     return (
       <div className="space-y-1">
         <button
           onClick={handleParentClick}
-          title={isSidebarCollapsed ? label : ""}
+          title={actualCollapsed ? label : ""}
           className={cn(
             "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200",
             isActive ? "bg-blue-50 text-blue-700 font-bold shadow-sm border border-blue-100" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium",
-            isSidebarCollapsed && "lg:justify-center lg:px-0"
+            actualCollapsed && "lg:justify-center lg:px-0"
           )}
         >
-          <Icon className={cn("w-5 h-5", isActive ? "text-blue-600" : "opacity-70", !isSidebarCollapsed ? "mr-3" : "lg:mr-0")} />
+          <Icon className={cn("w-5 h-5", isActive ? "text-blue-600" : "opacity-70", !actualCollapsed ? "mr-3" : "lg:mr-0")} />
           {showLabel && <span className="whitespace-nowrap flex-1 text-left">{label}</span>}
           {showLabel && subItems.length > 0 && <Layers className={cn("w-3 h-3 transition-transform", isExpanded ? "rotate-180" : "")} />}
         </button>
@@ -225,7 +265,11 @@ export default function App() {
             {subItems.map((sub: any) => (
               <button
                 key={sub.id}
-                onClick={() => { setActiveTab(sub.id); if (window.innerWidth <= 1024) setIsSidebarOpen(false); }}
+                onClick={() => { 
+                  setActiveTab(sub.id); 
+                  if (window.innerWidth <= 1024) setIsSidebarOpen(false);
+                  if (isSidebarCollapsed) setHoverExpand(false);
+                }}
                 className={cn(
                   "w-full flex items-center text-left px-3 py-2 text-sm rounded-lg transition-colors",
                   activeTab === sub.id ? "bg-blue-50 text-blue-700 font-semibold" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
@@ -244,23 +288,32 @@ export default function App() {
   return (
     <div className="fixed inset-0 flex w-full bg-slate-50 text-slate-900 overflow-hidden font-sans">
       {/* Sidebar Overlay for Mobile */}
-      {isSidebarOpen && window.innerWidth <= 1024 && (
-        <div className="fixed inset-0 bg-slate-900/40 z-[45] backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)}></div>
-      )}
+      {(isSidebarOpen && window.innerWidth <= 1024) || (hoverExpand && isSidebarCollapsed) ? (
+        <div 
+          className="fixed inset-0 bg-slate-900/10 z-[45] backdrop-blur-[1px]" 
+          onClick={() => {
+            if (window.innerWidth <= 1024) setIsSidebarOpen(false);
+            setHoverExpand(false);
+          }}
+        ></div>
+      ) : null}
 
-      {/* Sidebar */}
-      <aside
+          <aside
+        onMouseEnter={() => {
+          if (isSidebarCollapsed && window.innerWidth > 1024) setHoverExpand(true);
+        }}
+        onMouseLeave={() => setHoverExpand(false)}
         className={cn(
           "bg-white text-slate-800 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.05)] z-50 shrink-0 transition-all duration-300 absolute lg:relative h-full border-r border-slate-200",
           isSidebarOpen 
-            ? (isSidebarCollapsed ? "w-20 translate-x-0" : "w-72 translate-x-0") 
-            : "w-0 -translate-x-full lg:translate-x-0 overflow-hidden"
+            ? (actualCollapsed ? "w-20 translate-x-0" : "w-72 translate-x-0") 
+            : "w-0 -translate-x-full lg:w-0 lg:translate-x-0 overflow-hidden"
         )}
       >
-        <div className={cn("p-6 h-auto min-h-[80px] flex items-center border-b border-slate-100 shrink-0", isSidebarCollapsed && "lg:justify-center lg:px-2")}>
+        <div className={cn("p-6 h-auto min-h-[80px] flex items-center border-b border-slate-100 shrink-0", actualCollapsed && "lg:justify-center lg:px-2")}>
           <h1 className="text-lg font-bold flex items-center gap-3 w-full overflow-hidden">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-sm"><Layers className="w-6 h-6" /></div>
-            {(!isSidebarCollapsed || window.innerWidth <= 1024) && (
+            {(!actualCollapsed || window.innerWidth <= 1024) && (
               <div className="flex flex-col min-w-0 transition-opacity duration-300">
                 <span className="truncate tracking-wide text-blue-700">MASS</span>
                 <span className="text-[9px] text-slate-500 font-normal truncate" title="Management And Service System">MASS System</span>
@@ -278,22 +331,22 @@ export default function App() {
           <SidebarItem id="combined_calendar" icon={CalendarDays} label="Calendar All System" />
 
           <div className="mt-6 pt-4 border-t border-slate-100">
-            {(!isSidebarCollapsed || window.innerWidth <= 1024) && (
+            {(!actualCollapsed || window.innerWidth <= 1024) && (
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">External Systems</p>
             )}
             <a
               href="#"
-              title={isSidebarCollapsed ? "Remove Equipment" : ""}
+              title={actualCollapsed ? "Remove Equipment" : ""}
               onClick={(e) => { e.preventDefault(); window.open('https://example.com', '_blank'); }}
               className={cn(
                 "w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold border border-indigo-100 transition-colors shadow-sm group",
-                isSidebarCollapsed && "lg:justify-center lg:px-0"
+                actualCollapsed && "lg:justify-center lg:px-0"
               )}
             >
               <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-indigo-600 shadow-sm group-hover:scale-110 transition-transform shrink-0">
                 <Package className="w-4 h-4" />
               </div>
-              {(!isSidebarCollapsed || window.innerWidth <= 1024) && (
+              {(!actualCollapsed || window.innerWidth <= 1024) && (
                 <>
                   <span className="flex-1 text-sm truncate">Remove Equip</span>
                   <ExternalLink className="w-3 h-3 opacity-50 shrink-0" />
@@ -305,15 +358,15 @@ export default function App() {
         <div className="p-4 border-t border-slate-200 bg-white shrink-0">
           <button
             onClick={() => { setActiveTab('master_data'); if (window.innerWidth <= 1024) setIsSidebarOpen(false); }}
-            title={isSidebarCollapsed ? "Master Data" : ""}
+            title={actualCollapsed ? "Master Data" : ""}
             className={cn(
               "w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-colors",
               activeTab === 'master_data' ? "bg-blue-50 text-blue-700 font-bold shadow-sm border border-blue-100" : "text-slate-600 hover:bg-slate-50 font-medium",
-              isSidebarCollapsed && "lg:justify-center lg:px-0"
+              actualCollapsed && "lg:justify-center lg:px-0"
             )}
           >
-            <Database className={cn("w-5 h-5 text-blue-600", !isSidebarCollapsed ? "mr-2" : "lg:mr-0")} /> 
-            {(!isSidebarCollapsed || window.innerWidth <= 1024) && <span>Master Data</span>}
+            <Database className={cn("w-5 h-5 text-blue-600", !actualCollapsed ? "mr-2" : "lg:mr-0")} /> 
+            {(!actualCollapsed || window.innerWidth <= 1024) && <span>Master Data</span>}
           </button>
         </div>
       </aside>
@@ -321,9 +374,30 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 relative w-full h-full overflow-hidden bg-slate-50 flex flex-col">
         <header className="p-4 md:px-6 md:py-4 bg-white border-b border-slate-200 shrink-0 flex items-center gap-3 shadow-sm z-10">
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 lg:hidden">
-            <Menu className="w-5 h-5" />
-          </button>
+          <div 
+            style={{ 
+              position: 'fixed', 
+              left: navPos.x, 
+              top: navPos.y, 
+              zIndex: 100,
+              cursor: isDragging ? 'grabbing' : 'grab'
+            }}
+            className="lg:hidden"
+            onPointerDown={handleDragStart}
+            onPointerMove={handleDragMove}
+            onPointerUp={handleDragEnd}
+          >
+            <button 
+              onClick={() => { if (!hasMoved) setIsSidebarOpen(!isSidebarOpen); }}
+              className={cn(
+                "p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors",
+                isDragging ? "scale-110 opacity-80" : "scale-100 opacity-100"
+              )}
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          </div>
+
           <button 
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
             className="p-2 bg-slate-50 rounded-lg hover:bg-blue-50 text-slate-500 hover:text-blue-600 hidden lg:flex transition-colors border border-slate-200"
