@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, Pin, SortAsc, SortDesc, ArrowUpDown, Eraser, PenLine } from 'lucide-react';
+import { Search, Plus, Pin, SortAsc, SortDesc, ArrowUpDown, Eraser, PenLine, ChevronDown } from 'lucide-react';
 import { MasterData } from '../types';
 import { hexToRgbA } from '../lib/utils';
 
@@ -35,6 +35,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({ scopeOfWork: '', equipTeams: '', fiberTeams: '', configTeam: '', pmTeam: '', status: '' });
   const [editingCell, setEditingCell] = useState<string | null>(null);
+  const [displayLimit, setDisplayLimit] = useState(50);
 
   const getStatusColor = (statusName: string) => {
     const found = masterData.statuses.find(s => s.name === statusName);
@@ -159,15 +160,38 @@ export const DataTable: React.FC<DataTableProps> = ({
     setSearchTerm('');
     setFilters({ scopeOfWork: '', equipTeams: '', fiberTeams: '', configTeam: '', pmTeam: '', status: '' });
     setSortConfig({ key: null, direction: null });
+    setDisplayLimit(50);
+  };
+
+  const visibleData = useMemo(() => {
+    return processedData.slice(0, displayLimit);
+  }, [processedData, displayLimit]);
+
+  const loadMore = () => {
+    if (displayLimit < processedData.length) {
+      setDisplayLimit(prev => prev + 50);
+    }
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 100) {
+      loadMore();
+    }
   };
 
   return (
     <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col min-h-0 overflow-hidden relative">
       <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col gap-3">
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+          <div className="flex flex-col">
+            <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+            <p className="text-[10px] text-slate-500 font-medium">รวมทั้งหมด {data.length} รายการ (พบ {processedData.length} จากตัวกรอง)</p>
+          </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">{processedData.length} รายการ</span>
+            <span className="text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-full shadow-sm">
+              แสดงอยู่ {Math.min(displayLimit, processedData.length)} / {processedData.length} รายการ
+            </span>
             {onAddClick && (
               <button onClick={onAddClick} className={`${btnClass} text-white px-4 py-1.5 rounded-lg text-sm font-bold shadow-sm transition-transform active:scale-95 flex items-center gap-2`}>
                 <Plus className="w-4 h-4" /> <span className="hidden sm:inline">{addLabel}</span>
@@ -224,7 +248,7 @@ export const DataTable: React.FC<DataTableProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto table-container relative">
+      <div className="flex-1 overflow-auto table-container relative" onScroll={handleScroll}>
         <table className="w-full text-left border-collapse text-sm relative" style={{ tableLayout: 'fixed', minWidth: 'max-content' }}>
           <thead className="bg-slate-800 shadow-sm sticky top-0 z-40">
             <tr>
@@ -265,10 +289,10 @@ export const DataTable: React.FC<DataTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {processedData.length === 0 ? (
+            {visibleData.length === 0 ? (
               <tr><td colSpan={orderedColumns.length} className="p-8 text-center text-slate-500">ไม่มีข้อมูลที่ตรงกับการค้นหา</td></tr>
             ) : (
-              processedData.map((row) => (
+              visibleData.map((row) => (
                 <tr key={row.id} className="hover:bg-blue-50/50 transition-colors bg-white">
                   {orderedColumns.map((col, cIdx) => {
                     const isPinned = pinnedColumns.includes(col.key);
@@ -413,6 +437,17 @@ export const DataTable: React.FC<DataTableProps> = ({
             )}
           </tbody>
         </table>
+        {displayLimit < processedData.length && (
+          <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex flex-col items-center justify-center gap-2 sticky bottom-0 z-10 backdrop-blur-sm">
+            <div className="flex items-center gap-2 text-blue-600 animate-bounce">
+              <ChevronDown className="w-4 h-4" />
+              <span className="text-xs font-bold">เลื่อนลงเพื่อโหลดเพิ่ม</span>
+            </div>
+            <p className="text-[10px] text-slate-500">
+              กำลังแสดง {displayLimit} จากทั้งหมด {processedData.length} รายการ
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

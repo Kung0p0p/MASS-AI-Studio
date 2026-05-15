@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Home, UserCog, MapPin, Network, CalendarDays, 
   Database, Menu, Layers, ExternalLink, Cloud, 
-  PanelLeftClose, PanelLeftOpen, Package, ClipboardList,
+  ChevronLeft, ChevronRight, Package, ClipboardList,
   CircleAlert, CircleHelp
 } from 'lucide-react';
 import { onSnapshot, collection, doc, setDoc } from 'firebase/firestore';
@@ -79,7 +79,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('main_dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [hoverExpand, setHoverExpand] = useState(false);
   const [openModalForm, setOpenModalForm] = useState<string | null>(null);
   
   // Mobile Nav Position
@@ -120,7 +119,7 @@ export default function App() {
     }
   };
 
-  const actualCollapsed = isSidebarCollapsed && !hoverExpand;
+  const actualCollapsed = isSidebarCollapsed;
 
   const [masterData, setMasterData] = useState<MasterData>(defaultMasterData);
   const [tasksSys1, setTasksSys1] = useState<TaskSys1[]>([]);
@@ -249,12 +248,6 @@ export default function App() {
     }, [activeTab, subItems]);
 
     const handleParentClick = () => {
-      if (actualCollapsed) {
-        setHoverExpand(true);
-        if (subItems.length > 0) setIsExpanded(true);
-        return;
-      }
-
       if (subItems.length > 0) {
         setIsExpanded(!isExpanded);
         if (!isExpanded && !subItems.some((s: any) => s.id === activeTab)) {
@@ -291,7 +284,6 @@ export default function App() {
                 onClick={() => { 
                   setActiveTab(sub.id); 
                   if (window.innerWidth <= 1024) setIsSidebarOpen(false);
-                  if (isSidebarCollapsed) setHoverExpand(false);
                 }}
                 className={cn(
                   "w-full flex items-center text-left px-3 py-2 text-sm rounded-lg transition-colors",
@@ -311,22 +303,15 @@ export default function App() {
   return (
     <div className="fixed inset-0 flex w-full bg-slate-50 text-slate-900 overflow-hidden font-sans">
       {/* Sidebar Overlay for Mobile */}
-      {(isSidebarOpen && window.innerWidth <= 1024) || (hoverExpand && isSidebarCollapsed) ? (
+      {isSidebarOpen && window.innerWidth <= 1024 && (
         <div 
-          className="fixed inset-0 bg-slate-900/10 z-[45] backdrop-blur-[1px]" 
-          onClick={() => {
-            if (window.innerWidth <= 1024) setIsSidebarOpen(false);
-            setHoverExpand(false);
-          }}
+          className="fixed inset-0 bg-slate-900/40 z-[45] backdrop-blur-sm" 
+          onClick={() => setIsSidebarOpen(false)}
         ></div>
-      ) : null}
+      )}
 
       {/* Sidebar */}
       <aside
-        onMouseEnter={() => {
-          if (isSidebarCollapsed && window.innerWidth > 1024) setHoverExpand(true);
-        }}
-        onMouseLeave={() => setHoverExpand(false)}
         className={cn(
           "bg-white text-slate-800 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.05)] z-50 shrink-0 transition-all duration-300 fixed lg:relative h-full border-r border-slate-200",
           isSidebarOpen 
@@ -341,7 +326,7 @@ export default function App() {
               className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all hover:scale-110 active:scale-95"
               title="ขยายแถบเมนู"
             >
-              <PanelLeftOpen className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
           ) : (
             <>
@@ -360,7 +345,7 @@ export default function App() {
                 className="p-1.5 bg-slate-50 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 hidden lg:flex transition-colors border border-slate-200"
                 title="หุบแถบเมนู"
               >
-                <PanelLeftClose className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             </>
           )}
