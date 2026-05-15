@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Users, Network, Laptop, UserCheck, ListChecks, Tags, Plus, Trash2, Database, Cloud } from 'lucide-react';
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { db, handleFirestoreError, OperationType } from '../services/firebase';
 import { MasterData } from '../types';
 import { hexToRgbA } from '../lib/utils';
 
@@ -14,11 +14,11 @@ export const MasterDataView: React.FC<MasterDataViewProps> = ({ masterData, appI
 
   const updateDataInFirebase = async (key: string, val: any) => {
     const newData = { ...masterData, [key]: val };
+    const docPath = `artifacts/${appId}/public/data/settings/masterData`;
     try {
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'masterData'), newData);
+      await setDoc(doc(db, docPath), newData);
     } catch (e) {
-      console.error("Error updating master data:", e);
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+      handleFirestoreError(e, OperationType.WRITE, docPath);
     }
   };
 

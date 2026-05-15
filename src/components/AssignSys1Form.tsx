@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ClipboardList, CloudUpload, Users, Wrench } from 'lucide-react';
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { db, handleFirestoreError, OperationType } from '../services/firebase';
 import { MasterData, TaskSys1 } from '../types';
 import { MultiSelect } from './MultiSelect';
 import { getScopeDuration } from '../lib/utils';
@@ -153,13 +153,13 @@ export const AssignSys1Form: React.FC<AssignSys1FormProps> = ({ tasksSys1, maste
     try {
       const taskId = `sys1_${Date.now()}`;
       const newTask = { id: taskId, ...form, createdAt: new Date().toISOString() };
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasksSys1', taskId), newTask);
+      const taskDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'tasksSys1', taskId);
+      await setDoc(taskDocRef, newTask);
       alert('✅ บันทึกงาน Region Assignment ขึ้น Cloud สำเร็จ!');
       setForm({ dateTime: new Date().toLocaleString('th-TH', { hour12: false }), installDate: '', startTime: '09:00', endTime: '10:00', helperEndTime: '10:00', equipTeams: [], equipTeamsSub: [], fiberTeams: [], configTeam: '', cid: '', customerName: '', scopeOfWork: '', otherScopeDetail: '', customerContact: '', location: '', pmTeam: '', status: 'รอรับงาน', remark: '' });
       if (onClose) onClose();
     } catch (error) {
-      console.error("Error adding document: ", error);
-      alert("❌ เกิดข้อผิดพลาดในการบันทึกข้อมูลขึ้น Cloud");
+      handleFirestoreError(error, OperationType.WRITE, `artifacts/${appId}/public/data/tasksSys1`);
     }
   };
 

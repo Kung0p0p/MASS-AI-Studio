@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MapPin, CloudUpload, Network } from 'lucide-react';
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { db, handleFirestoreError, OperationType } from '../services/firebase';
 import { MasterData } from '../types';
 
 interface AssignSys2FormProps {
@@ -24,13 +24,13 @@ export const AssignSys2Form: React.FC<AssignSys2FormProps> = ({ masterData, onCl
     if (!form.surveyId) return alert('กรุณาระบุ Survey ID');
     try {
       const taskId = `sys2_${Date.now()}`;
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasksSys2', taskId), { id: taskId, ...form });
+      const colPath = `artifacts/${appId}/public/data/tasksSys2`;
+      await setDoc(doc(db, colPath, taskId), { id: taskId, ...form });
       alert('✅ บันทึกงานสำรวจขึ้น Cloud สำเร็จ!');
       setForm({ date: new Date().toLocaleString('th-TH', { hour12: false }), surveyId: '', location: '', surveyor: '', status: 'รอรับงาน' });
       if (onClose) onClose();
     } catch (e) {
-      console.error(e);
-      alert("❌ เกิดข้อผิดพลาดในการบันทึก");
+      handleFirestoreError(e, OperationType.WRITE, `artifacts/${appId}/public/data/tasksSys2`);
     }
   };
 
@@ -98,13 +98,13 @@ export const AssignSys3Form: React.FC<AssignSys3FormProps> = ({ masterData, onCl
     if (!form.cid) return alert('กรุณาระบุ CID');
     try {
       const taskId = `sys3_${Date.now()}`;
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasksSys3', taskId), { id: taskId, ...form });
+      const colPath = `artifacts/${appId}/public/data/tasksSys3`;
+      await setDoc(doc(db, colPath, taskId), { id: taskId, ...form });
       alert('✅ บันทึกออเดอร์ Cross Connect ขึ้น Cloud สำเร็จ!');
       setForm({ date: new Date().toLocaleString('th-TH', { hour12: false }), cid: '', fromPort: '', toPort: '', status: 'รอรับงาน' });
       if (onClose) onClose();
     } catch (e) {
-      console.error(e);
-      alert("❌ เกิดข้อผิดพลาดในการบันทึก");
+      handleFirestoreError(e, OperationType.WRITE, `artifacts/${appId}/public/data/tasksSys3`);
     }
   };
 

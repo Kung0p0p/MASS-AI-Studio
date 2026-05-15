@@ -5,7 +5,7 @@ import {
   CircleAlert, CircleHelp, ClipboardList, Package
 } from 'lucide-react';
 import { onSnapshot, collection, doc, setDoc } from 'firebase/firestore';
-import { db, initAuth, auth } from './services/firebase';
+import { db, initAuth, auth, handleFirestoreError, OperationType } from './services/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import firebaseConfig from '../firebase-applet-config.json';
 import { MasterData, TaskSys1, TaskSys2, TaskSys3 } from './types';
@@ -82,16 +82,27 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isDbReady, setIsDbReady] = useState(false);
   
-  const appId = (firebaseConfig as any).appletId || 'default-app-id';
+  const appId = firebaseConfig.firestoreDatabaseId.replace('ai-studio-', '');
 
   useEffect(() => {
     initAuth().catch(console.error);
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser) setIsDbReady(true);
+      if (currentUser) {
+        setIsDbReady(true);
+        // Test connection
+        import('firebase/firestore').then(({ doc, getDocFromServer }) => {
+          getDocFromServer(doc(db, 'artifacts', appId, 'public', 'connection'))
+            .catch(error => {
+               if(error instanceof Error && error.message.includes('the client is offline')) {
+                  console.error("Please check your Firebase configuration or network.");
+               }
+            });
+        });
+      }
     });
     return () => unsubscribe();
-  }, []);
+  }, [appId]);
 
   useEffect(() => {
     if (!isDbReady || !user) return;
@@ -104,21 +115,22 @@ export default function App() {
           if (!data.scopeOfWorks) data.scopeOfWorks = defaultMasterData.scopeOfWorks;
           setMasterData(data);
         } else {
-          setDoc(masterDataDocRef, defaultMasterData).catch(console.error);
+          setDoc(masterDataDocRef, defaultMasterData).catch(err => handleFirestoreError(err, OperationType.WRITE, masterDataDocRef.path));
         }
       },
-      (error) => console.error("Error fetching master data:", error)
+      (error) => handleFirestoreError(error, OperationType.GET, masterDataDocRef.path)
     );
 
     const syncCollection = (colName: string, setStateFunc: (data: any[]) => void) => {
-      return onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', colName),
+      const colPath = `artifacts/${appId}/public/data/${colName}`;
+      return onSnapshot(collection(db, colPath),
         (snap) => {
           const items: any[] = [];
           snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
           items.sort((a, b) => b.id.localeCompare(a.id));
           setStateFunc(items);
         },
-        (error) => console.error(`Error fetching ${colName}:`, error)
+        (error) => handleFirestoreError(error, OperationType.GET, colPath)
       );
     };
 
@@ -157,8 +169,7 @@ export default function App() {
     try {
       await setDoc(taskDocRef, updatedData, { merge: true });
     } catch (e) {
-      console.error("Update error:", e);
-      alert("❌ เกิดข้อผิดพลาดในการอัปเดตข้อมูลบน Cloud");
+      handleFirestoreError(e, OperationType.UPDATE, taskDocRef.path);
     }
   };
 

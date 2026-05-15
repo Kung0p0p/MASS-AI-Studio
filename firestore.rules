@@ -12,17 +12,23 @@ service cloud.firestore {
     }
 
     function isValidId(id) {
-      return id is string && id.size() <= 128;
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    match /artifacts/{appId}/public/data/{collection}/{docId} {
+    match /artifacts/{appId}/public/connection {
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && isValidId(docId);
     }
-    
+
+    // Master Data
     match /artifacts/{appId}/public/data/settings/masterData {
       allow read: if isSignedIn();
       allow write: if isSignedIn();
+    }
+
+    // Collections: tasksSys1, tasksSys2, tasksSys3
+    match /artifacts/{appId}/public/data/{collection}/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isValidId(docId);
     }
   }
 }
