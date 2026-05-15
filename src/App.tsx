@@ -107,14 +107,14 @@ export default function App() {
     setNavPos({ x, y });
   };
 
-  const handleDragEnd = () => {
+  const handleDragEnd = (e: React.PointerEvent) => {
     setIsDragging(false);
-  };
-
-  const handleMenuClick = (e: React.MouseEvent) => {
+    
+    // Check if this was a click (not a drag)
     const dragDuration = Date.now() - dragStartTime;
-    // If it was a quick tap OR didn't move much, it's a click
-    if (!hasMovedSignificant || dragDuration < 150) {
+    const dist = Math.sqrt(Math.pow(e.clientX - dragStartPos.x, 2) + Math.pow(e.clientY - dragStartPos.y, 2));
+    
+    if (!hasMovedSignificant && dist < 10 && dragDuration < 300) {
       setIsSidebarOpen(!isSidebarOpen);
     }
   };
@@ -128,21 +128,27 @@ export default function App() {
 
   const [user, setUser] = useState<User | null>(null);
   const [isDbReady, setIsDbReady] = useState(false);
+  const [dbError, setDbError] = useState<string | null>(null);
   
   const appId = firebaseConfig.firestoreDatabaseId.replace('ai-studio-', '');
 
   useEffect(() => {
-    initAuth().catch(console.error);
+    initAuth().catch(err => {
+      console.error(err);
+      setDbError("Authentication failed");
+    });
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
         setIsDbReady(true);
+        setDbError(null);
         // Test connection
         import('firebase/firestore').then(({ doc, getDocFromServer }) => {
           getDocFromServer(doc(db, 'artifacts', appId, 'public', 'connection'))
             .catch(error => {
-               if(error instanceof Error && error.message.includes('the client is offline')) {
-                  console.error("Please check your Firebase configuration or network.");
+               console.warn("Connection test failed (Expected if doc doesn't exist):", error);
+               if(error.code === 'unavailable') {
+                 setDbError("Cannot reach Firestore. Retrying...");
                }
             });
         });
@@ -323,29 +329,27 @@ export default function App() {
           {actualCollapsed ? (
             <button 
               onClick={() => setIsSidebarCollapsed(false)} 
-              className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all hover:scale-110 active:scale-95"
+              className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all hover:scale-110 active:scale-95 group"
               title="ขยายแถบเมนู"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </button>
           ) : (
             <>
               <h1 className="text-lg font-bold flex items-center gap-3 overflow-hidden">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-sm"><Layers className="w-6 h-6" /></div>
-                {(!actualCollapsed || window.innerWidth <= 1024) && (
-                  <div className="flex flex-col min-w-0 transition-opacity duration-300">
-                    <span className="truncate tracking-wide text-blue-700">MASS</span>
-                    <span className="text-[9px] text-slate-500 font-normal truncate" title="Management And Service System">MASS System</span>
-                  </div>
-                )}
+                <div className="flex flex-col min-w-0 transition-opacity duration-300">
+                  <span className="truncate tracking-wide text-blue-700">MASS</span>
+                  <span className="text-[9px] text-slate-500 font-normal truncate" title="Management And Service System">MASS System</span>
+                </div>
               </h1>
               
               <button 
                 onClick={() => setIsSidebarCollapsed(true)} 
-                className="p-1.5 bg-slate-50 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 hidden lg:flex transition-colors border border-slate-200"
+                className="p-2 bg-slate-50 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors border border-slate-200 group"
                 title="หุบแถบเมนู"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
               </button>
             </>
           )}
@@ -418,7 +422,6 @@ export default function App() {
             onPointerUp={handleDragEnd}
           >
             <button 
-              onClick={handleMenuClick}
               className={cn(
                 "p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200",
                 isDragging ? "scale-110 rotate-12 shadow-2xl ring-4 ring-blue-100 opacity-90" : "scale-100 shadow-xl"
@@ -445,7 +448,12 @@ export default function App() {
             {activeTab === 'master_data' && 'Master Data'}
           </h2>
           <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-            {isDbReady ? (
+            {dbError ? (
+              <div className="flex items-center gap-2 text-rose-500">
+                <CircleAlert className="w-4 h-4 animate-pulse" />
+                <span className="text-[10px] font-bold">{dbError}</span>
+              </div>
+            ) : isDbReady ? (
               <><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> <span className="text-[10px] font-bold text-slate-600">Cloud Synced</span></>
             ) : (
               <><div className="w-2 h-2 rounded-full bg-orange-500"></div> <span className="text-[10px] font-bold text-slate-600">Connecting...</span></>

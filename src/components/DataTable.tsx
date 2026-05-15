@@ -186,12 +186,8 @@ export const DataTable: React.FC<DataTableProps> = ({
         <div className="flex justify-between items-center">
           <div className="flex flex-col">
             <h2 className="text-lg font-bold text-slate-800">{title}</h2>
-            <p className="text-[10px] text-slate-500 font-medium">รวมทั้งหมด {data.length} รายการ (พบ {processedData.length} จากตัวกรอง)</p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-full shadow-sm">
-              แสดงอยู่ {Math.min(displayLimit, processedData.length)} / {processedData.length} รายการ
-            </span>
             {onAddClick && (
               <button onClick={onAddClick} className={`${btnClass} text-white px-4 py-1.5 rounded-lg text-sm font-bold shadow-sm transition-transform active:scale-95 flex items-center gap-2`}>
                 <Plus className="w-4 h-4" /> <span className="hidden sm:inline">{addLabel}</span>
@@ -437,17 +433,36 @@ export const DataTable: React.FC<DataTableProps> = ({
             )}
           </tbody>
         </table>
-        {displayLimit < processedData.length && (
-          <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex flex-col items-center justify-center gap-2 sticky bottom-0 z-10 backdrop-blur-sm">
-            <div className="flex items-center gap-2 text-blue-600 animate-bounce">
-              <ChevronDown className="w-4 h-4" />
-              <span className="text-xs font-bold">เลื่อนลงเพื่อโหลดเพิ่ม</span>
-            </div>
-            <p className="text-[10px] text-slate-500">
-              กำลังแสดง {displayLimit} จากทั้งหมด {processedData.length} รายการ
-            </p>
+      </div>
+
+      <div className="bg-slate-50 border-t border-slate-200 p-2 flex items-center justify-between shrink-0 z-[60]">
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col">
+             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Summary</span>
+             <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-700">
+                  {processedData.length === data.length 
+                    ? `Total: ${data.length}` 
+                    : `Filtered: ${processedData.length} of ${data.length}`}
+                </span>
+             </div>
           </div>
-        )}
+        </div>
+
+        <div className="flex items-center gap-4">
+          {displayLimit < processedData.length ? (
+            <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg border border-blue-100 shadow-sm animate-pulse">
+               <ChevronDown className="w-3.5 h-3.5 font-bold" />
+               <span className="text-[10px] font-bold">
+                 Showing {Math.min(displayLimit, processedData.length)} of {processedData.length} items (Scroll down to load more)
+               </span>
+            </div>
+          ) : (
+            <div className="px-3 py-1 bg-slate-100 text-slate-500 rounded-lg border border-slate-200">
+               <span className="text-[10px] font-bold">Showing {processedData.length} of {processedData.length} items</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
